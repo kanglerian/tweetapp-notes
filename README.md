@@ -977,3 +977,119 @@ class PostController < ApplicationController
   end
 end
 ```
+
+## **I. Editing / Deleting Post**
+
+### 1. Editing menggunakan Console
+
+Cari data untuk uji coba menggunakan `console` dan `save`
+```console
+rails console
+.
+.
+> post = Post.find_by(id: 1)
+> post.content = "Selamat pagi!"
+> post.save
+```
+
+### 2. Deleting menggunakan Console
+
+Cari data untuk uji coba menggunakan `console` dan `destroy`
+```console
+rails console
+.
+.
+> post = Post.find_by(id: 2)
+> post.destroy
+```
+
+## **J. Persiapan Editing**
+
+### 1. Editing Post Page
+
+Tambahkan code dibawah ini di `routes`
+```ruby
+post 'post/:id/edit' => 'post#edit'
+```
+
+Tambahkan file `edit.html.erb` di `views/post`
+```HTML
+<div class="main posts-new">
+  <div class="container">
+    <h1 class="form-heading">Edit a post</h1>
+  </div>
+```
+
+Tambahkan file `show.html.erb` di `views/post`
+```HTML
+<div class="post-menus">
+  <%= link_to("Edit", "/posts/#{@post.id}/edit") %>
+</div>
+```
+
+Tambahkan kode ini di `post_controller.rb`
+```ruby
+def edit
+end
+```
+
+### 2. Menambahkan Form dan Update
+
+Tambahkan code dibawah ini di `post_controller.rb`
+```ruby
+def edit
+  @post = Post.find_by(id: params[:id])
+end
+def update
+  @post = Post.find_by(id: params[:id])
+  @post.content = params[:content]
+  @post.save
+  redirect_to("/post/index")
+end
+```
+
+Ubah file `edit.html.erb` di `views/post` menjadi
+```HTML
+<div class="main posts-new">
+  <div class="container">
+    <h1 class="form-heading">Edit a post</h1>
+    <div class="form">
+    <%= form_tag("/post/#{@post.id}/update") do %>
+      <div class="form-body">
+        <!-- Display @post's content in textarea -->
+        <textarea name="content"><% @post.content %></textarea>
+        <input type="submit" value="Save">
+      </div>
+    <% end %>
+    </div>
+  </div>
+```
+
+Tambahkan code dibawah ini di `routes`
+```ruby
+post 'post/:id/update' => 'post#update'
+```
+
+### 3. Deleting Post
+
+Tambahkan code dibawah ini di `post_controller.rb`
+```ruby
+def destroy
+  @post = Post.find_by(id: params[:id])
+  @post.destroy
+  redirect_to("/post/index")
+end
+```
+
+Tambahkan code dibawah ini di `routes`
+```ruby
+post 'post/:id/destroy' => 'post#destroy'
+```
+
+Tambahkan code dibawah ini ke file `show.html.erb` di `views/post`
+```HTML
+<div class="post-menus">
+  <%= link_to("Edit", "/posts/#{@post.id}/edit") %>
+  <%= link_to("Delete", "/posts/#{@post.id}/delete", {method: "post"}) %>
+</div>
+```
