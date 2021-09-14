@@ -772,3 +772,208 @@ Hapus semua header di `views` kemudian, buat hanya satu di `applications.html.er
   </ul>
 </header>
 ```
+## **G. Creating the Post Details Page**
+
+### 1. Auto Generated Column
+`id`, `created_at`, `updated_at` itu auto generated.
+
+### 2. The find_by Method'
+
+Kamu dapat menemukan sebuah postingan yang spesifik menggunakan `find_by` method.
+```console
+rails console
+.
+.
+> post = Post.find_by(id: 3)
+> post.content
+=> "Isi konten"
+```
+
+### 3. The Post Details Page
+
+```ruby
+Rails.application.routes.draw do
+  get '/post/:id' => 'post#show'
+end
+```
+
+```ruby
+class PostController < ApplicationController
+  def show
+  end
+end
+```
+
+Buat `show.html.erb` di `views/post/` dengan code dibawah ini:
+
+```HTML
+<div class="main posts-show">
+  <div class="container">
+    <div class="posts-show-item">
+      <p>This page shows the details of a post</p>
+    </div>
+  </div>
+</div>
+```
+
+### 4. Mendapatkan ID dari URL
+
+Tambahkan `params[:id]` di `post_controller.rb`
+```ruby
+# post_controller.rb
+def show
+  @id = params[:id]
+end
+```
+
+Tambahkan `<% @id %>` di `show.html.erb`
+```Ruby
+# show.html.erb
+<% @id %>
+```
+
+### 5. Menampilkan Post di Detail Page
+
+Tambahkan `content` show di `post_controller.rb`
+```ruby
+class PostController < ApplicationController
+  def index
+    @post = Post.all
+  end
+  def show
+    @post = Post.find_by(id: params[:id])
+  end
+end
+```
+
+Tambahkan `content` di `show.html.erb`
+```HTML
+<div class="main posts-show">
+  <div class="container">
+    <div class="posts-show-item">
+      <p>
+        <%= @post.content %>
+      </p>
+      <div class="post-time">
+        <%= @post.created_at %>
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+### 6. Menambahkan Link ke Detail Post
+
+Menggunakan `link_to` di `show.html.erb`
+```Ruby
+<%= link_to(post.content, "/post/#{post.id}) %>
+```
+
+## **H. Membuat Postingan Baru**
+
+### 1. Membuat Action `new` di routes
+
+Tambahkan code dibawah ini di `routes`
+```ruby
+get 'post/new' => 'post#new'
+```
+
+Tambahkan `action` dibawah ini di `post_controller.rb`
+```ruby
+class PostController < ApplicationController
+  .
+  .
+  def new
+  end
+end
+```
+
+Tambahkan `menu` di `application.html.erb`
+```HTML
+<li>
+  <%= link_to("New Post","/post/new")%>
+</li>
+```
+
+Buat file baru `new.html.erb` di `views/post/`
+```HTML
+<div class="main posts-new">
+  <div class="container">
+    <h1 class="form-heading">Create a new post</h1>
+    <div class="form">
+      <div class="form-body">
+        <textarea></textarea>
+        <input type="submit" value="Post">
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+### 2. Sending Input Data
+
+Tambahkan code dibawah ini ke `routes`
+```ruby
+post 'post/create' => 'post#create'
+```
+
+Tambahkan `form_tag` di `new.html.erb`
+```HTML
+<div class="main posts-new">
+  <div class="container">
+    <h1 class="form-heading">Create a new post</h1>
+    <div class="form">
+      <%= form_tag("/post/create") do %>
+      <div class="form-body">
+        <textarea></textarea>
+        <input type="submit" value="Post">
+      </div>
+      <% end %>
+    </div>
+  </div>
+</div>
+```
+
+### 3. The Redirect Method
+
+Mengembalikan atau mengarahkan halaman ke halaman yang ditentukan:
+```ruby
+class PostController < ApplicationController
+  .
+  .
+  def create
+    redirect_to("/post/index")
+  end
+end
+```
+
+### 4. Menyimpan Postingan
+
+Tambahkan `name` di `textarea`
+```HTML
+<textarea name="content"></textarea>
+```
+
+Dapatkan di action `create`
+```ruby
+class PostController < ApplicationController
+  .
+  .
+  def create
+    @post = Post.new(content: params[:content])
+    @post.save
+    redirect_to("/post/index")
+  end
+end
+```
+
+### 5. Sorting Postingan
+
+Arahkan atau sortir menjadi `descending`
+```ruby
+class PostController < ApplicationController
+  def index
+    @post = Post.all.order(created_at: :desc)
+  end
+end
+```
