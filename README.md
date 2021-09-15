@@ -1093,3 +1093,136 @@ Tambahkan code dibawah ini ke file `show.html.erb` di `views/post`
   <%= link_to("Delete", "/posts/#{@post.id}/delete", {method: "post"}) %>
 </div>
 ```
+
+## **K. Validating Posts**
+
+### 1. Preventing Empty Posts
+
+Tambahkan `validates` di model Post `post.rb`
+```ruby
+validates :content, {presence: true}
+```
+
+### 2. Limiting the Length Posts
+
+Tambahkan `length` di model Post `post.rb`
+```ruby
+validates :content, {presence: true,length: {maximum: 140}}
+```
+
+## **L. Validation Messages**
+
+### 1. Validation and the "save" method
+
+Uji coba `false` dan `true` di rails console
+```console
+rails console
+.
+.
+> post = Post.new
+> post.save
+> false
+> post.content = "Nah ayeuna mah aya!"
+> post.save
+=> "Nah ayeuna mah aya!"
+```
+
+### 2. Redirect to the Form
+
+Tambahkan code dibawah ini di `post_controller.rb`
+```ruby
+def update
+  if @post.save
+    rediret_to("/posts/index")
+  else
+    rediret_to("/posts/#{@post.id}/edit")
+  end
+end
+```
+
+### 3. Redisplaying the Content of Failed Post
+
+Tambahkan code dibawah ini di else bagian `update` di `post_controller.rb`
+```ruby
+def update
+  if @post.save
+    rediret_to("/posts/index")
+  else
+    render("/posts/edit")
+  end
+end
+```
+
+### 4. Displaying Error Messages
+
+Uji coba di rails console
+```console
+rails console
+.
+.
+> post = Post.new(content:"")
+> post.errors.full_messages
+> post.save
+> post.errors.full_messages
+=> "content can't blank"
+```
+
+### 5. Displaying Flash Messages
+
+Tambahkan code dibawah ini di `post_controller.rb`
+```ruby
+def update
+  if @post.save
+    flash[:notice] = "Selamat, data berhasil diubah"
+    rediret_to("/post/index")
+  else
+    render("post/edit")
+  end
+end
+```
+
+Tambahkan code dibawah ini di `application.html.erb`
+```ruby
+<% if flash[:notice]  %>
+  <div class="flash">
+    <%= flash[:notice] %>
+  </div>
+<% end %>
+```
+
+## **L. Validation in Other Page**
+
+### 1. Validation on the New Post Page
+
+Tambahkan code dibawah ini di `post_controller.rb`
+```ruby
+def create
+  if @post.save
+    flash[:notice] = "Post successfully created"
+    rediret_to("/post/index")
+  else
+    render("post/new")
+  end
+end
+def destroy
+@post = Post.find_by(id: params[:id])
+  @post.destroy
+  flash[:notice] = "Post successfully deleted"
+  redirect_to("/posts/index")
+end
+```
+
+Tambahkan code dibawah ini dan membuat action `new` di `post_controller.rb` supaya data tidak hilang
+```ruby
+def new
+  @post = Post.new
+end
+```
+
+```ruby
+<% @post.errors.full_messages.each do |message| %>
+  <div class="form-error">
+    <%= message %>
+  </div>
+<% end %>
+```
