@@ -1226,3 +1226,448 @@ end
   </div>
 <% end %>
 ```
+
+## **M. The User Model**
+
+### 1. Creating the Table and the Model
+
+```console
+rails g model User name:string email:string
+rails db:migrate
+```
+### 2. Creating a User
+
+```console
+rails console
+.
+.
+> user = User.new(name: "Lerian", email: "lerian@codale.com)
+> user.save
+```
+
+### 3. Adding Validations
+
+Tambahkan di models `user.rb`
+```ruby
+class User < ApplicationRecord
+  validates :name, {presence: true}
+  validates :email, {presence: true, uniqueness: true}
+end
+```
+
+Buat akun menggunakan `console`
+```console
+rails console
+.
+.
+> user1 = User.new(name:"Sopyan",email:"sopyansauri@gmail.com")
+> user1.save
+> user2 = User.new(name:"Adhie",email:"adhie@gmail.com")
+> user2.save
+```
+
+## **N. Displaying the Users**
+
+### 1. Creating the Users Page
+
+Buat controller `users` dengan action `index`
+```console
+rails g controller users index
+```
+
+Jika masih error, coba ketik `rails db:migrate`
+
+Tambahkan `@users` di `user_controller.rb`
+```ruby
+def index
+  @users = User.all
+end
+```
+
+Tambahkan code dibawah ini di `index.html.erb` dalam folder `users` view
+```HTML
+<div class="main users-index">
+  <div class="container">
+    <h1 class="users-heading">All Users</h1>
+    <!-- Add an each method inside <% %> -->
+    <% @users.each do |user| %>
+      <div class="users-index-item">
+        <div class="user-right">
+          <!-- Display the user's name -->
+          <%= user.name %>
+        </div>
+      </div>
+    <!-- Add an end statement -->
+    <% end %>
+  </div>
+</div>
+```
+
+Tambahkan link untuk `users` di `application.html.erb`
+```HTML
+<li><%= link_to("Users","/users/index")%></li>
+```
+
+Tambahkan css untuk `users.scss`
+```css
+/* users/index ================================ */
+.users-heading {
+  font-weight: 300;
+  margin: 60px 0 20px;
+  font-size: 48px;
+  color: #bcc8d4;
+}
+
+.users-index-item {
+  padding: 20px 30px;
+  background-color: white;
+  overflow: hidden;
+  box-shadow: 0 2px 6px #c1ced7;
+  display: table;
+  width: 100%;
+}
+
+.user-left img {
+  width: 50px;
+  height: 50px;
+  border-radius: 40%;
+  box-shadow: 0 2px 6px #c1ced7;
+  object-fit: cover;
+}
+
+.user-name a {
+  font-weight: 600;
+}
+
+.user-name a:hover {
+  color: #3ecdc6;
+}
+
+.user-left {
+  float: left;
+  width: 10%;
+}
+
+.user-right {
+  width: 90%;
+  padding-left: 25px;
+  text-align: left;
+  display: table-cell;
+  vertical-align: middle;
+}
+
+/* users/show ================================ */
+.user-show {
+  text-align: center;
+}
+
+.user {
+  margin-bottom: 20px;
+}
+
+.user img {
+  width: 80px;
+  height: 80px;
+  border-radius: 40%;
+  box-shadow: 0 2px 6px #c1ced7;
+  margin: 20px 0 10px;
+  object-fit: cover;
+}
+
+.user h2 {
+  font-size: 20px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.user p {
+  font-size: 13px;
+  margin-bottom: 15px;
+}
+
+.user a {
+  color: #8899a6;
+  text-decoration: underline;
+  font-weight: 200;
+}
+
+.user span {
+  color: #afb6bf;
+  font-weight: 200;
+  padding: 0 6px 0 8px;
+}
+
+.user-tabs {
+  margin-top: 40px;
+  background-color: white;
+  overflow: hidden;
+  box-shadow: 0 2px 6px #c1ced7;
+}
+
+.user-tabs li {
+  float: left;
+}
+
+.user-tabs li.active {
+  border-bottom: 2px solid #3ecdc6;
+}
+
+.user-tabs li.active a {
+  color: #57575f;
+}
+
+.user-tabs a {
+  display: inline-block;
+  padding: 16px 30px;
+  color: #afb6bf;
+}
+
+/* users/new, users/edit ================================ */
+.users-form input {
+  margin-bottom: 15px;
+}
+```
+
+### 2. Creating the Users Details Page
+
+Tambahkan `show` di `routes.rb`
+```ruby
+get "users/:id" => "users#show"
+```
+
+Tambahkan code di `users_controller.rb`
+```ruby
+def show
+  @user = User.find_by(id: params[:id])
+end
+```
+
+Buat file baru `show.html.erb` di `users` view
+```HTML
+<div class="main user-show">
+  <div class="container">
+    <div class="user">
+      <!-- Display the @user's name -->
+      <h2><%= @user.name %></h2>
+      <!-- Display the @user's email -->
+      <p><%= @user.email %></p>
+    </div>
+  </div>
+</div>
+```
+
+Ubah code dibawah ini di `index.html.erb` dalam folder `users` view
+```HTML
+<div class="main users-index">
+  <div class="container">
+    <h1 class="users-heading">All Users</h1>
+    <!-- Add an each method inside <% %> -->
+    <% @users.each do |user| %>
+      <div class="users-index-item">
+        <div class="user-right">
+          <!-- Display the user's name -->
+          <%= link_to(user.name, "/users/#{user.id}") %>
+        </div>
+      </div>
+    <!-- Add an end statement -->
+    <% end %>
+  </div>
+</div>
+```
+
+## **O. Creating Users**
+
+### 1. Adding a Form
+
+Tambahkan code dibawah ini di `routes.rb`
+```ruby
+get "signup" => "/users/new"
+```
+
+Tambahkan code dibawah ini di `users_controller.rb`
+```ruby
+def new
+end
+```
+
+Tambahkan file baru `new.html.erb` dibawah ini di views `users`
+```HTML
+<div class="main users-new">
+  <div class="container">
+    <div class="form-heading">Sign up</div>
+    <div class="form users-form">
+      <div class="form-body">
+        <p>Name</p>
+        <input>
+        <p>Email</p>
+        <input>
+        <input type="submit" value="Sign up">
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+Tambahkan link untuk `signup` di `application.html.erb`
+```HTML
+<li><%= link_to("Sign Up","/signup") %></li>
+```
+
+### 2. Saving the Users
+
+Tambahkan code dibawah ini di `users_controller.rb`
+```ruby
+def create
+  @user = User.new(name: params[:name], email: params[:email])
+  @user.save
+  redirect_to("/users/#{@user.id}")
+end
+```
+
+Ubah code di `new.html.erb` dibawah ini di views `users`
+```HTML
+<div class="main users-new">
+  <div class="container">
+    <div class="form-heading">Sign up</div>
+    <div class="form users-form">
+      <div class="form-body">
+        <%= form_tag("/users/create) do %>
+        <p>Name</p>
+        <input name="name">
+        <p>Email</p>
+        <input name="email">
+        <input type="submit" value="Sign up">
+        <% end %>
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+### 3. Adding Validation to the "create" Action
+
+Tambahkan code dibawah ini di `users_controller.rb`
+```ruby
+def new
+  @user = User.new
+end
+def create
+  @user = User.new(name: params[:name], email: params[:email])
+  if @user.save
+    flash[:notice] = "You have signed up successfully"
+    redirect_to("/users/#{@user.id}")
+  else
+    render("users/new")
+  end
+end
+```
+
+Tambahkan code dibawah ini di `new.html.erb`
+```HTML
+  <!-- Paste the HTML to display the error messages -->
+    <% @user.errors.full_messages.each do |message| %>
+      <div class="form-error">
+        <%= message %>
+      </div>
+    <% end %>
+    <%= form_tag("/users/create") do %>
+      <p>Name</p>
+      <!-- Use the value attribute to set the default value -->
+      <input name="name" value="<%= @user.name %>">
+      <p>Email</p>
+      <!-- Use the value attribute to set the default value -->
+      <input name="email" value="<%= @user.email %>">
+      <input type="submit" value="Sign up">
+    <% end %>
+```
+
+## **P. Editing Users**
+
+### 1. Editing the Users
+
+Tambahkan code dibawah ini di `routes.rb`
+```ruby
+get "users/:id/edit" => "users#edit"
+```
+
+Tambahkan code dibawah ini di `users_controller.rb`
+```ruby
+def edit
+  @user = User.find_by(id: params[:id])
+end
+```
+
+Buat file baru `edit.html.erb`
+```HTML
+<div class="main users-edit">
+  <div class="container">
+    <div class="form-heading">Edit Account</div>
+    <div class="form users-form">
+      <div class="form-body">
+        <p>Name</p>
+        <input value="<%= @user.name %>">
+        <p>Email</p>
+        <input value="<%= @user.email %>">
+        <input type="submit" value="Save">
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+Edit file `show.html.erb` di `users` view
+```HTML
+<div class="main user-show">
+  <div class="container">
+    <div class="user">
+      <!-- Display the @user's name -->
+      <h2><%= @user.name %></h2>
+      <!-- Display the @user's email -->
+      <p><%= @user.email %></p>
+      <%= link_to("Edit", "/users/#{@user.id}/edit") %>
+    </div>
+  </div>
+</div>
+```
+
+### 2. Updating the changes
+
+Tambahkan code dibawah ini di `routes.rb`
+```ruby
+post "users/:id/update" => "users#update"
+```
+
+Tambahkan code dibawah ini di `users_controller.rb`
+```ruby
+def update
+  @user = User.find_by(id: params[:id])
+  @user.name = params[:name]
+  @user.email = params[:email]
+  if @user.save
+    flash[:notice] = "Data sudah berhasil diupdate"
+    redirect_to("/users/#{@user.id}")
+  else
+    render("users/edit")
+  end
+end 
+```
+
+Tambahkan code dibawah ini di `edit.html.erb`
+```HTML
+<% @user.errors.full_messages.each do |message| %>
+  <div class="form-error">
+    <%= message %>
+  </div>
+<% end %>
+        
+<%= form_tag("/users/#{@user.id}/update") do %>
+  <p>Name</p>
+  <!-- Add the name attribute -->
+  <input name="name" value="<%= @user.name %>">
+  <p>Email</p>
+  <!-- Add the name attribute -->
+  <input name="email" value="<%= @user.email %>">
+  <input type="submit" value="Save">
+  <!-- Add an end statement -->
+<% end %>
+```
