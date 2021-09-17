@@ -1789,3 +1789,70 @@ if params[:image]
   File.binwrite("public/user_images/#{@user.image_name}", image.read)
 end
 ```
+
+## **S. Login & Logout**
+
+### 1. Preparing the Models and Views
+
+Tambahkan `link_to` di `application.html.erb`
+```ruby
+<%= link_to("Log in", "/login") %>
+```
+
+Tambahkan code dibawah ini di `routes.rb`
+```ruby
+get "login" => "users#login_form"
+post "login" => "users#login"
+```
+
+Tambahkan code dibawah ini di `users_controller.rb`
+```ruby
+def login_form
+end
+def login
+end
+```
+
+Tambahkan file dengan code dibawah ini di views `users` dengan nama `login_form.html.erb`
+```HTML
+<div class="main users-new">
+  <div class="container">
+    <div class="form-heading">Log in</div>
+    <div class="form users-form">
+      <div class="form-body">
+        <%= form_tag("/login") do %>
+        <p>Email</p>
+        <input name="email">
+        <p>Password</p>
+        <!-- Specify the type attribute in the input tag below -->
+        <input type="password" name="password">
+        <input>
+        <input type="submit" value="Log in">
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+Tambahkan column `password` ke database table `user`
+```console
+rails console
+.
+.
+> rails g migration add_password_to_users
+# jangan dulu migrate sebelum menambahkan validasi
+> rails db:migrate
+> user = User.find_by(id: 1)
+> user.password = "lerian"
+> user.save
+```
+
+Tambahkan code ini di migration `add_password_to_users`
+```ruby
+add_column :users, :password, :string
+```
+
+Tambahkan code ini di validasi `user.rb`
+```ruby
+validates :password, {presence: true}
+```
