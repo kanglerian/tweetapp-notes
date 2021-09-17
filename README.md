@@ -1671,3 +1671,121 @@ Tambahkan code dibawah ini di `edit.html.erb`
   <!-- Add an end statement -->
 <% end %>
 ```
+
+## **Q. Saving the Image**
+
+### 1. Adding a Column
+
+Tambahkan `image_name` ke table `user`
+```console
+rails g migration add_image_name_to_users
+```
+### 2. Editing the Migration File
+
+```ruby
+class AddImageNameToUsers < ActiveRecord::Migration[5.0]
+  def change
+    add_column :users, :image_name, :string
+  end
+end
+```
+
+```console
+rails db:migrate  
+```
+
+### 3. Setting the Default Image
+
+Tambahkan code dibawah ini di `users_controller`
+```ruby
+def create
+  @user = User.new(
+    name: params[:name],
+    email: params[:email],
+    # Add an argument to set the "image_name"
+    image_name: "default_user.jpg"
+  )
+  if @user.save
+    flash[:notice] = "You have signed up successfully"
+    redirect_to("/users/#{@user.id}")
+  else
+    render("users/new")
+  end
+end
+```
+
+### 4. Displaying Profile Images
+
+Tambahkan code dibawah ini di `show.html.erb` dan `index.html.erb`
+
+```HTML
+<div class="main user-show">
+  <div class="container">
+    <div class="user">
+      <!-- Add an <img> tag to display the profile image -->
+      <img src="<%= "/user_images/#{@user.image_name}" %>">
+      <h2><%= @user.name %></h2>
+      <p><%= @user.email %></p>
+      <%= link_to("Edit", "/users/#{@user.id}/edit") %>
+    </div>
+  </div>
+</div>
+```
+
+```HTML
+<div class="main users-index">
+  <div class="container">
+    <h1 class="users-heading">All Users</h1>
+    <% @users.each do |user| %>
+      <div class="users-index-item">
+        <!-- Paste the HTML here -->
+        <div class="user-left">
+          <!-- Add an <img> tag to display the profile image -->
+          <img src="<%= "/user_images/#{user.image_name}" %>">
+        </div>
+        <div class="user-right">
+          <%= link_to(user.name, "/users/#{user.id}") %>
+        </div>
+      </div>
+    <% end %>
+  </div>
+</div>
+```
+## **R. Upload an Image**
+
+### 1. Sending Images
+
+Edit code di `edit.html.erb` di dalam folder users view.
+```HTML
+<%= form_tag("/users/#{@user.id}/update", {multipart: true}) do %>
+  <p>Name</p>
+  <input name="name" value="<%= @user.name %>">
+  <p>Image</p>
+  <!-- Add an <input> tag to upload an image -->
+  <input name="image" type="file">
+  <p>Email</p>
+  <input name="email" value="<%= @user.email %>">
+  <input type="submit" value="Save">
+<% end %>
+```
+
+### 2. Creating a File
+
+Percobaan untuk membuat file, atau mengunggah file.
+```console
+rails console
+.
+.
+> File.write("public/sample.txt","Hello World!")
+```
+
+### 3. Saving Images
+
+Edit code di `users_controller.rb` dengan menambahkan code dibawah ini
+```ruby
+if params[:image]
+  @user.image_name = "#{@user.id}.jpg"
+  image = params[:image]
+  File.binwrite("public/user_images/#{@user.image_name}", image.read)
+end
+```
