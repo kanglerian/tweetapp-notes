@@ -1828,6 +1828,7 @@ Tambahkan file dengan code dibawah ini di views `users` dengan nama `login_form.
         <input type="password" name="password">
         <input>
         <input type="submit" value="Log in">
+        <% end  %>
       </div>
     </div>
   </div>
@@ -1855,4 +1856,144 @@ add_column :users, :password, :string
 Tambahkan code ini di validasi `user.rb`
 ```ruby
 validates :password, {presence: true}
+```
+
+### 2. Adding the "Login" Functionality
+
+Tambahkan code dibawah ini di `users_controller.rb`
+```ruby
+def login
+  @user = User.find_by(
+    email: params[:email],
+    password: params[:password]
+  )
+  if @user
+    flash[:notice] = "Login berhasil!"
+    redirect_to("/post/index")
+  else
+    @error_message = "Invalid email/password combination"
+    @email = params[:email]
+    @password = params[:password]
+    render("users/login_form")
+  end
+end
+```
+
+Tambahkan code ini di `login_form.html.erb` di atas `form_tag`
+```ruby
+<% if @error_message %>
+  <div class="form-error">
+    <%= @error_message %>
+  </div>
+<% end %>
+```
+
+### Session Variable
+
+> session[:key] = value
+
+Tambahkan code dibawah ini di `users_controller.rb`
+```ruby
+def login
+  @user = User.find_by(
+    email: params[:email],
+    password: params[:password]
+  )
+  if @user
+    session[:user_id] = @user.id
+    flash[:notice] = "Login berhasil!"
+    redirect_to("/post/index")
+  else
+    @error_message = "Invalid email/password combination"
+    @email = params[:email]
+    @password = params[:password]
+    render("users/login_form")
+  end
+end
+```
+
+Tambahkan link di `application.html.erb`
+```ruby
+<% if session[:user_id] %>
+  <li>
+    Your ID is :
+    <%= session[:user_id] %>
+  </li>
+<% end %>
+```
+
+### Logout
+
+Tambahkan code dibawah ini di `users_controller.rb`
+```ruby
+def logout
+  session[:user_id] = nil
+  flash[:notice] = "Logout telah berhasil!"
+  redirect_to("/login")
+end
+```
+
+Tambahkan code dibawah ini di `routes.rb`
+```ruby
+post "logout" => "users#logout"
+```
+
+Tambahkan code dibawah ini di `application.html.erb`
+```HTML
+<ul class="header-menus">
+  <% if session[:user_id] %>
+    <li>
+      Your ID is:
+      <%= session[:user_id] %>
+    </li>
+    <!-- Paste the HTML for users that are logged in -->
+    <li>
+      <%= link_to("Posts", "/posts/index") %>
+    </li>
+    <li>
+      <%= link_to("New post", "/posts/new") %>
+    </li>
+    <li>
+      <%= link_to("Users", "/users/index") %>
+    </li>
+    <li>
+    <!-- Add a link to the "logout" action -->
+      <%= link_to("Log out", "/logout", {method: :post}) %>
+    </li>
+  <% else %>
+    <!-- Paste the HTML for users that are not logged in -->
+    <li>
+      <%= link_to("About", "/about") %>
+    </li>
+    <li>
+      <%= link_to("Sign up", "/signup") %>
+    </li>
+    <li>
+      <%= link_to("Log in", "/login") %>
+    </li>
+  <% end %>
+</ul>
+```
+
+Tambahkan code dibawah ini di `users_controller.rb` login after sign up
+```ruby
+def create
+  @user = User.new(
+    name: params[:name],
+    email: params[:email],
+    image_name: "default_user.jpg",
+    password: params[:password]
+  )
+  if @user.save
+    session[:user_id] = @user.id
+    flash[:notice] = "You have signed up successfully"
+    redirect_to("/users/#{@user.id}")
+  else
+    render("users/new")
+  end
+end
+```
+
+```HTML
+<input type="password" name="password" value="<%= @user.password %>">
 ```
