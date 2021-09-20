@@ -1888,7 +1888,7 @@ Tambahkan code ini di `login_form.html.erb` di atas `form_tag`
 <% end %>
 ```
 
-### Session Variable
+#### Session Variable
 
 > session[:key] = value
 
@@ -1922,7 +1922,7 @@ Tambahkan link di `application.html.erb`
 <% end %>
 ```
 
-### Logout
+#### Logout
 
 Tambahkan code dibawah ini di `users_controller.rb`
 ```ruby
@@ -1997,3 +1997,482 @@ end
 ```HTML
 <input type="password" name="password" value="<%= @user.password %>">
 ```
+
+### 3. Authentication
+
+#### Displaying the User's Name
+
+Ubah code dibawah ini di `application.html.erb`
+```HTML
+<ul class="header-menus">
+  <% current_user = User.find_by(id: session[:user_id]) %>
+  <% if current_user %>
+    <li>
+      <%= link_to(current_user.name, "/users/#{current_user.id}") %>
+    </li>
+    <!-- Paste the HTML for users that are logged in -->
+    <li>
+      <%= link_to("Posts", "/posts/index") %>
+    </li>
+    <li>
+      <%= link_to("New post", "/posts/new") %>
+    </li>
+    <li>
+      <%= link_to("Users", "/users/index") %>
+    </li>
+    <li>
+    <!-- Add a link to the "logout" action -->
+      <%= link_to("Log out", "/logout", {method: :post}) %>
+    </li>
+  <% else %>
+    <!-- Paste the HTML for users that are not logged in -->
+    <li>
+      <%= link_to("About", "/about") %>
+    </li>
+    <li>
+      <%= link_to("Sign up", "/signup") %>
+    </li>
+    <li>
+      <%= link_to("Log in", "/login") %>
+    </li>
+  <% end %>
+</ul>
+```
+
+#### Moving Variables to Action
+
+Ubah code dibawah ini di `application.html.erb`
+```HTML
+<ul class="header-menus">
+  <% if @current_user %>
+    <li>
+      <%= link_to(@current_user.name, "/users/#{@current_user.id}") %>
+    </li>
+    <!-- Paste the HTML for users that are logged in -->
+    <li>
+      <%= link_to("Posts", "/posts/index") %>
+    </li>
+    <li>
+      <%= link_to("New post", "/posts/new") %>
+    </li>
+    <li>
+      <%= link_to("Users", "/users/index") %>
+    </li>
+    <li>
+    <!-- Add a link to the "logout" action -->
+      <%= link_to("Log out", "/logout", {method: :post}) %>
+    </li>
+  <% else %>
+    <!-- Paste the HTML for users that are not logged in -->
+    <li>
+      <%= link_to("About", "/about") %>
+    </li>
+    <li>
+      <%= link_to("Sign up", "/signup") %>
+    </li>
+    <li>
+      <%= link_to("Log in", "/login") %>
+    </li>
+  <% end %>
+</ul>
+```
+
+Tambahkan code dibawah ini di `application_controller.rb`
+```ruby
+before_action :set_current_user
+
+def set_current_user
+  @current_user = User.find_by(id: session[:user_id])
+end
+```
+
+### Authenticating a User
+
+Tambahkan code dibawah ini di `application_controller.rb`
+```ruby
+before_action :set_current_user
+
+def set_current_user
+  @current_user = User.find_by(id: session[:user_id])
+end
+
+def authenticate_user
+  if @current_user == nil
+    flash[:notice] = "Kamu harus login terlebih dahulu!"
+    redirect_to("/login")
+  end
+end
+
+def forbid_login_user
+  if @current_user
+    flash[:notice] = "Berhasil login!"
+    redirect_to("/posts/index")
+  end
+end
+
+```
+
+Tambahkan code dibawah ini di `posts_controller.rb` dan `users_controller.rb`
+```ruby
+before_action :authenticate_user
+```
+
+```ruby
+before_action :authenticate_user, {only: [:index, :show, :edit, :update]}
+before_action :forbid_login_user, {only: [:new, :create, :login_form, :login]}
+```
+
+Tambahkan code dibawah ini di `home_controller.rb`
+```ruby
+before_action :forbid_login_user, {only: [:top]}
+```
+
+Ubah code ini di file `application.html.erb`
+```HTML
+<div class="header-logo">
+  <!-- Remove the line below, then paste the new code -->
+    <% if @current_user %>
+      <%= link_to("TweetApp", "/posts/index") %>
+    <% else %>
+      <%= link_to("TweetApp", "/") %>
+    <% end %>
+</div>
+```
+
+Tambahkan code dibawah ini di `show.html.erb`
+```ruby
+<% if @user.id == @current_user.id %>
+  <%= link_to("Edit", "/users/#{@user.id}/edit") %>
+<% end %>
+```
+
+Tambahkan action di `users_controller.rb` dan `before_action`
+```ruby
+before_action :ensure_correct_user, {only: [:edit, :update]}
+def ensure_correct_user
+  if @current_user.id != params[:id].to_i
+    flash[:notice] = "Unauthorized access"
+    redirect_to("/posts/index")
+  end
+end
+```
+
+## **T. Associating Posts with the User Model**
+
+### 1. Adding the `user_id` column to posts table
+
+```console
+rails g migration add_user_id_to_posts
+# isi dulu migrationnya
+rails db:migrate
+```
+
+Tambahkan di `migration`
+```ruby
+add_column :posts, :user_id, :string
+```
+
+Tambahkan di `post.rb`
+```ruby
+validates :user_id, {presence: true}
+```
+
+### 2. Associating New Posts with the Logged in Users
+
+Tambahkan code di `posts_controller.rb` di dalam action `create`
+```ruby
+@post = Post.new(
+  content: params[:content],
+  # Add an argument to set the "user_id"
+  user_id: @current_user.id
+)
+```
+
+### 3. Displaying User's Name for Each Post
+
+Tambahkan di `posts_controller` di action `show`
+```ruby
+@user = User.find_by(id: @post.user_id)
+```
+
+Tambahkan code dibawah ini di file `show.html.erb`
+```HTML
+<div class="post-user-name">
+  <!-- Fill in the src attribute to display @user's profile image -->
+  <img src="<%= "/user_images/#{@user.image_name}" %>">
+  <!-- Add a link to the "User details" page using the link_to method -->
+  <%= link_to(@user.name, "/users/#{@user.id}" ) %>
+</div>
+```
+
+### 4. Defining an Instance Method
+
+Tambahkan code dibawah ini di `post.rb`
+```ruby
+def user
+  return User.find_by(id: self.user_id)
+end
+```
+
+Cek di console
+```console
+rails console
+.
+.
+> post = Post.find_by(id: self.user_id)
+> post.user
+> quit
+```
+
+### 5. Using Instance Method
+
+Ubah code di `posts_controller` di action `show`
+```ruby
+@user = @post.user
+```
+
+### 6. Displaying the User's Name on the Posts Page
+
+Tambahkan di `post` view `index.html.erb`
+```HTML
+<div class="posts-index-item">
+  <div class="post-left">
+    <!-- Fill in the src attribute to display the user's profile image -->
+    <img src="<%= "/user_images/#{post.user.image_name}" %>">
+  </div>
+  <div class="post-right">
+    <div class="post-user-name">
+    <!-- Add a link to the "User details" page using the link_to method -->
+      <%= link_to(post.user.name, "/users/#{post.user.id}") %>
+    </div>
+      <%= link_to(post.content, "/posts/#{post.id}") %>
+  </div>
+</div>
+```
+
+### 7. The Where Method
+
+```console
+rails console
+.
+.
+> posts = Post.where(user_id: 1)
+=> [...]
+> posts[0].content
+=> "..."
+```
+
+### 8. Getting The User's Posts
+
+Tambahkan action di `user.rb`
+```ruby
+def posts
+  return Post.where(user_id: self.id)
+end
+```
+
+Cek di terminal
+```console
+rails console
+.
+.
+> user = User.find_by(id: 1)
+> user.posts
+=> [...]
+```
+
+### 9. Displaying Posts on the `User Details` Page
+
+Tambahkan code di view users `show.html.erb`
+```HTML
+<% @user.posts.each do |post| %>
+  <div class="posts-index-item">
+    <div class="post-left">
+      <img src="<%= "/user_images/#{post.user.image_name}" %>">
+    </div>
+    <div class="post-right">
+      <div class="post-user-name">
+        <%= link_to(post.user.name, "/users/#{post.user.id}") %>
+      </div>
+      <%= link_to(post.content, "/posts/#{post.id}") %>
+    </div>
+  </div>
+<% end %>
+```
+
+## **U. Authenticating the "edit" Action**
+
+### 1. Preventing Others from Editing Your Posts
+
+Tambahkan code di `show.html.erb` di view `posts`
+```HTML
+<% if @post.user.id == @current_user.id %>
+  <div class="post-menus">
+    <%= link_to("Edit", "/post/#{@post.id}/edit") %>
+    <%= link_to("Delete", "/post/#{@post.id}/destroy", {method: "post"})%>
+  </div>
+<% end %>
+```
+
+Tambahkan code di `post_controller.rb`
+```ruby
+before_action :ensure_correct_user, {only: [:edit, :update, :destroy]}
+
+def ensure_correct_user
+  @post = Post.find_by(id: params[:id])
+  if @post.user_id != @current_user.id
+    flash[:notice] = "Unauthorized access"
+    redirect_to("/posts/index")
+  end
+end
+```
+
+## **V. The Likes Functionality**
+
+### 1. The Like Model
+
+```console
+rails g model Like user_id:integer post_id:integer
+rails db:migrate
+```
+
+Tambahkan code dibawah ini di `like.rb`
+```ruby
+validates :user_id, {presence: true}
+validates :post_id, {presence: true}
+```
+
+### 2. Adding Columns to the "likes" Table
+
+```console
+rails console
+.
+.
+> like = Like.new(user_id: 1, post_id: 2)
+> like.save
+```
+
+### 3. Displaying "Liked!" or "Not Liked!"
+
+Tambahkan code di `show.html.erb` di view `posts`
+```ruby
+<% if Like.find_by(user_id: @current_user.id, post_id: @post.id) %>
+  Liked!
+<% else %>
+  Not Liked!
+<% end %>
+```
+
+### 4. The Likes Controller
+
+Tambahkan code di `routes.rb`
+```ruby
+posts "likes/:post_id/create" => "likes#create"
+```
+
+Buat file `likes_controller.rb` dan tambahkan code
+```ruby
+class LikesController < ApplicationController
+  before_action :authenticate_user
+  def create
+  end
+end
+```
+
+### 5. Creating the "Like!" Button
+
+Tambahkan code dibawah ini di action `create` di `likes_controller.rb`
+```ruby
+def create
+  @like = Like.new(
+      user_id: @current_user.id,
+      post_id: params[:post_id]
+    )
+  @like.save
+  redirect_to("/post/#{params[:post_id]}")
+end
+```
+
+Tambahkan code dibawah ini di `show.html.erb` di view `post`
+```HTML
+<% if Like.find_by(user_id: @current_user.id, post_id: @post.id) %>
+  Liked!
+<% else %>
+  <%= link_to("Like!","/likes/#{@post.id}/create", {method:"post"}) %>
+<% end %>
+```
+
+### 6. Removing Likes
+
+Tambahkan code dibawah ini di action `destroy` di `likes_controller.rb`
+```ruby
+def destroy
+  @like = Like.find_by(
+      user_id: @current_user.id,
+      post_id: params[:post_id]
+    )
+  @like.destroy
+  redirect_to("/post/#{params[:post_id]}")
+end
+```
+
+Tambahkan code dibawah ini di `routes.rb`
+```ruby
+post "likes/:post_id/destroy" => "likes#destroy"
+```
+
+Tambahkan code dibawah ini di `show.html.erb` di view `post`
+```HTML
+<% if Like.find_by(user_id: @current_user.id, post_id: @post.id) %>
+  <%= link_to("Liked!","/likes/#{@post.id}/destroy", {method:"post"}) %>
+<% else %>
+  <%= link_to("Like!","/likes/#{@post.id}/create", {method:"post"}) %>
+<% end %>
+```
+
+### 7. Using an Icon for the "Like" buttons
+
+Tambahkan code dibawah ini di action view `application.html.erb`
+```HTML
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+```
+
+### 8. Creating a Like Button Icon
+
+Tambahkan code dibawah ini di action view `application.html.erb`
+```HTML
+<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+```
+
+Ubah code dibawah ini di `show.html.erb` di view `post`
+```ruby
+<% if Like.find_by(user_id: @current_user.id, post_id: @post.id) %>
+  <%= link_to("/likes/#{@post.id}/destroy", {method:"post"}) do %>
+    <span class="fa fa-heart like-btn-unlike"></span>
+  <% end %>
+<% else %>
+  <%= link_to("/likes/#{@post.id}/create", {method:"post"}) do %>
+    <span class="fa fa-heart like-btn"></span>
+  <% end %>
+<% end %>
+```
+
+Tambahkan code ini di `post.scss`
+```css
+.like-btn{
+  color:#8899a6;
+}
+
+.like-btn-unlike{
+  color:#ff2581;
+}
+
+.posts-show-item .fa {
+  font-size: 16px;
+  margin-right: 3px;
+}
+```
+
+
+### 9. Displaying The Number of Likes
+
