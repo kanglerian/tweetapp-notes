@@ -2320,9 +2320,9 @@ before_action :ensure_correct_user, {only: [:edit, :update, :destroy]}
 
 def ensure_correct_user
   @post = Post.find_by(id: params[:id])
-  if @post.user_id != @current_user.id
-    flash[:notice] = "Unauthorized access"
-    redirect_to("/posts/index")
+  if @post.user_id.to_i != @current_user.id
+      flash[:notice] = "Gak bisa akses!"
+      redirect_to("/post/index")
   end
 end
 ```
@@ -2476,3 +2476,147 @@ Tambahkan code ini di `post.scss`
 
 ### 9. Displaying The Number of Likes
 
+Tambahkan code di `post_controller.rb` on action `show`
+```ruby
+def show
+  @post = Post.find_by(id: params[:id])
+  @user = @post.user
+  # Define the @likes_count variable
+  @likes_count = Like.where(post_id: @post.id).count
+end
+```
+
+Tambahkan code di `show.html.erb`
+```ruby
+<%= @likes_count %>
+```
+
+Tambahkan code di `routes.rb`
+```ruby
+get "users/:id/likes" => "users#likes"
+```
+
+Definisikan `Likes` action di `user_controller.rb`
+```ruby
+def likes
+  @user = User.find_by(id: params[:id])
+  @likes = Like.where(user_id: @user.id)
+end
+```
+
+Tambahkan code di `show.html.erb` di view user
+```ruby
+<ul class="user-tabs">
+  <li class="active"><%= link_to("Posts", "/users/#{@user.id}") %></li>
+  <li><%= link_to("Likes", "/users/#{@user.id}/likes") %></li>
+</ul>
+```
+
+Tambahkan code ini di `likes.html.erb`
+```HTML
+<!-- Paste the HTML here -->
+<div class="main user-show">
+  <div class="container">
+    <div class="user">
+      <img src="<%= "/user_images/#{@user.image_name}" %>">
+      <h2><%= @user.name %></h2>
+      <p><%= @user.email %></p>
+      <% if @user.id == @current_user.id %>
+        <%= link_to("Edit", "/users/#{@user.id}/edit") %>
+      <% end %>
+    </div>
+    
+    <ul class="user-tabs">
+      <li><%= link_to("Posts", "/users/#{@user.id}") %></li>
+      <li class="active"><%= link_to("Likes", "/users/#{@user.id}/likes") %></li>
+    </ul>
+    
+    <!-- Get each element of @likes using the each method -->
+    <% @likes.each do |like| %>
+      <!-- Define the post variable -->
+      <% post = Post.find_by(id: like.post_id) %>
+      
+      <div class="posts-index-item">
+        <div class="post-left">
+          <img src="<%= "/user_images/#{post.user.image_name}" %>">
+        </div>
+        <div class="post-right">
+          <div class="post-user-name">
+            <%= link_to(post.user.name, "/users/#{post.user.id}") %>
+          </div>
+          <%= link_to(post.content, "/posts/#{post.id}") %>
+        </div>
+      </div>
+    <!-- Add an end statement -->
+    <% end %>
+  </div>
+</div>
+```
+
+## **W. Encrypting Password**
+
+### 1. Editing the Gemfile
+Buka file `gemfile` lalu tambahkan code dibawah ini
+```ruby
+gem 'bcrypt'
+```
+
+Run di terminal
+```console
+bundle install
+```
+
+### 2. has_secure_password
+
+Tambahkan code dibawah ini `user.rb` dan hapus `validates password`
+```ruby
+has_secure_password
+```
+
+### 3. Adding the password_digest Column
+
+Run di console
+```console
+rails g migration change_users_columns
+```
+Tambahkan code di `change_users_column`
+```ruby
+add_column :users, :password_digest, :string
+remove_column :users,:password, :string
+```
+
+```console
+rails db:migrate
+```
+
+### 4. Password Column
+
+```console
+rails console
+.
+.
+> user = User.find_by(id: 1)
+> user.password = "lerian"
+> user.password_digest
+=> "$2a$10$iAE0MVmZ05e5E9AoibHdzuMXuA09sCnMyjkU62OqNNIkkIE32q3dy"
+> user.save
+```
+
+### 5. Log in with Encrypted Passwords
+
+Ubah action `login` di `users_controller.rb`
+```ruby
+def login
+  @user = User.find_by(
+    email: params[:email]
+  )
+if @user && @user.authenticate(params[:password])
+  session[:user_id] = @user.id
+  flash[:notice] = "Login berhasil!"
+  redirect_to("/post/index")
+else
+  @error_message = "Email atau password salah!"
+    render("users/login_form")
+  end
+end
+```
