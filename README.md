@@ -2620,3 +2620,59 @@ else
   end
 end
 ```
+
+## **X. Setup MacOS**
+
+### 1. Ruby Environment Setup
+
+1. Install homebrew dan cek `brew -v`
+atau 
+> /usr/bin/ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+
+2. Cek dulu `rbenv -v` dan Install `brew install rbenv ruby-build`
+
+
+### 2. Ruby on Rails
+
+1. Install Text Editor
+2. Cek versi ruby `rbenv versions`
+3. Jika belum ada, install dulu ruby
+4. Install Ruby on Rails `gem install rails -v 5.2.6`
+5. Cek versi Ruby on Rails `rails -v`
+6. Buat aplikasi `rails new app_name`
+7. Jalankan aplikasi `cd sample_app` dan `rails s`
+8. Jalan di `localhost:3000`
+
+## **Z. Setup Windows**
+
+### 1. Ruby Environment Setup
+
+1. Installing MSYS2 `https://www.msys2.org/#installation`
+2. Install Ruby `https://github.com/oneclick/rubyinstaller2/releases/tag/rubyinstaller-2.5.3-1`
+3. Cek `ruby -v`
+
+### 2. Ruby on Rails
+1. Command Prompt
+2. Text Editor
+3. Cek `ruby -v`
+4. Install SQLite3 `https://sqlite.org/index.html`
+
+![](windows-1.png)
+
+> Copy the file sqlite3.dll within the folder you downloaded and paste it into C:\Ruby25-x64\bin.
+
+![](windows-2.png)
+
+> Copy the file sqlite3.exe within the folder you downloaded to C:\Ruby25-x64\bin. Once you do this, you have copied two files to C:\Ruby25-x64\bin.
+
+![](windows-3.png)
+
+5. Install `gem install rails -v 5.2.6` dan `rails -v`
+6. Buat `rails new application_name`
+
+> If installing sqlite3 has failed, run the following commands to retry:
+```console
+cd sample_app
+ridk exec pacman -S mingw-w63-x86_64-sqlite3
+bundle install
+```
